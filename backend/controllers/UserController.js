@@ -133,4 +133,19 @@ module.exports = class UserController {
 
     res.status(200).send(currentUser)
   }
+
+  // Resgate db by user id
+  static async getById(req,res){
+
+    const id = req.params.id;
+
+    const user = await User.findById(id).select('-password');
+    if(!user){
+        req.status(422).json({
+          message: 'Usuario não encontrado!'})
+        
+          return;
+    }
+    res.status(200).json({ user })
+  }
 };
