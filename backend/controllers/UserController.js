@@ -148,4 +148,13 @@ module.exports = class UserController {
     }
     res.status(200).json({ user })
   }
+
+  // Method update data users
+  static async editUser(req, res){
+      res.status(200).json({
+          message: 'Deu certo update!'
+        })
+    
+        return;
+  }
 };
