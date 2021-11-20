@@ -1,11 +1,12 @@
 const User = require("../models/User");
 
 const bcrypt = require("bcrypt");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 
 // Imports Helpers
 const createUserToken = require("../helpers/create-user-token");
-const getToken = require('../helpers/get-token');
+const getToken = require("../helpers/get-token");
+const getUserByToken = require("../helpers/get-user-by-token");
 
 module.exports = class UserController {
   static async register(req, res) {
@@ -118,43 +119,110 @@ module.exports = class UserController {
   }
 
   // Verify user to token
-  static async checkUser(req, res){
-    let currentUser
+  static async checkUser(req, res) {
+    let currentUser;
 
-    if(req.headers.authorization){
-        const token = getToken(req);
-        const decoded = jwt.verify(token, 'nossosecret');
+    if (req.headers.authorization) {
+      const token = getToken(req);
+      const decoded = jwt.verify(token, "nossosecret");
 
-        currentUser = await User.findById(decoded.id);
-        currentUser.password = undefined;
-    }else{
-        currentUser = null
+      currentUser = await User.findById(decoded.id);
+      currentUser.password = undefined;
+    } else {
+      currentUser = null;
     }
 
-    res.status(200).send(currentUser)
+    res.status(200).send(currentUser);
   }
 
   // Resgate db by user id
-  static async getById(req,res){
-
+  static async getById(req, res) {
     const id = req.params.id;
 
-    const user = await User.findById(id).select('-password');
-    if(!user){
-        req.status(422).json({
-          message: 'Usuario não encontrado!'})
-        
-          return;
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      res.status(422).json({
+        message: "Usuario não encontrado!",
+      });
+
+      return;
     }
-    res.status(200).json({ user })
+    res.status(200).json({ user });
   }
 
   // Method update data users
-  static async editUser(req, res){
+  static async editUser(req, res) {
+    const id = req.params.id;
+
+    const token = getToken(req);
+    const user = await getUserByToken(token);
+
+    const { name, email, phone, password, confirmPassword } = req.body;
+
+    let image = "";
+
+    // Validations
+    if (!name) {
+      res.status(422).json({
+        message: "O nome é obrigatorio",
+      });
+      return;
+    }
+    user.name = name;
+
+    if (!email) {
+      res.status(422).json({
+        message: "O email é obrigatorio",
+      });
+      return;
+    }
+
+    const userExists = await User.findOne({ email: email });
+
+    // verify user exists
+    if (user.email !== email && userExists) {
+      res.status(422).json({
+        message: "Já existe um usuario com esse email!!",
+      });
+      return;
+    }
+    user.email = email;
+
+    if (!phone) {
+      res.status(422).json({
+        message: "O telefone é obrigatorio",
+      });
+      return;
+    }
+    user.phone = phone;
+  
+    if(password !== confirmPassword){
+      res.status(422).json({
+        message: "As senhas não conferem",
+      });
+      return;
+    }else if(password === confirmPassword && password != null){
+
+      // Creating password
+      const salt = await bcrypt.genSalt(12);
+      const passwordHash = await bcrypt.hash(password, salt);
+
+      user.password = passwordHash;
+    }
+   try {
+     // return   user update data
+      await User.findOneAndUpdate(
+        {_id: user._id},
+        {$set: user},
+        {new: true},
+    )
       res.status(200).json({
-          message: 'Deu certo update!'
-        })
-    
-        return;
+        message: 'Usuario atualizado com sucesso!',
+      })
+   } catch (err) {
+     res.status(500).json({
+      message: err})
+      return;
+   }
   }
 };
