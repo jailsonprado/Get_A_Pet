@@ -1,4 +1,4 @@
-Projeto Get A pet
+Projeto Get A pet (Em desenvolvimento!)
 
 
 requisitos para rodar a aplicação 

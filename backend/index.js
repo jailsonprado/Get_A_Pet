@@ -3,7 +3,7 @@ const cors = require("cors");
 
 const app = express();
 
-// Config JSON response
+// Config JSON response 
 app.use(express.json());
 
 // Solve CORS
@@ -15,8 +15,11 @@ app.use(express.static("public"));
 // Routes
     // Imports routers
 const UserRoutes = require('./routes/UserRoutes')
+const PetRoutes =  require('./routes/PetRoutes')
 
 
 app.use('/users', UserRoutes)
+app.use('/pets', PetRoutes)
+
 
 app.listen(4000);
